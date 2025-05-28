@@ -78,6 +78,68 @@ func RemoveNotes(html string) string {
 	})
 }
 
+func RemoveJSComments(src string) string {
+	var out strings.Builder
+	single := false
+	multi := false
+
+	n := len(src)
+	for i := 0; i < n; {
+		if single {
+			if src[i] == '\n' {
+				single = false
+				out.WriteByte(src[i])
+			}
+			i++
+			continue
+		}
+		if multi {
+			if i+1 < n && src[i] == '*' && src[i+1] == '/' {
+				multi = false
+				i += 2
+			} else {
+				i++
+			}
+			continue
+		}
+		if i+1 < n && src[i] == '/' && src[i+1] == '/' {
+			single = true
+			i += 2
+			continue
+		}
+		if i+1 < n && src[i] == '/' && src[i+1] == '*' {
+			multi = true
+			i += 2
+			continue
+		}
+		if src[i] == '"' || src[i] == '\'' || src[i] == '`' {
+			quote := src[i]
+			out.WriteByte(src[i])
+			i++
+			for i < n {
+				out.WriteByte(src[i])
+				if src[i] == quote {
+					i++
+					break
+				}
+				if src[i] == '\\' {
+					i++
+					if i < n {
+						out.WriteByte(src[i])
+						i++
+					}
+					continue
+				}
+				i++
+			}
+			continue
+		}
+		out.WriteByte(src[i])
+		i++
+	}
+	return out.String()
+}
+
 // 清理JS注释
 func RemoveJSComment(data string) string {
 	var result strings.Builder
